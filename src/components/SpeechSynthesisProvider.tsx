@@ -6,6 +6,7 @@ import { SpeechSynthesizer } from 'microsoft-cognitiveservices-speech-sdk';
 interface SpeechContextType {
   isWebSpeechPlaying: boolean;
   isAzurePlaying: boolean;
+  isAzureLoading: boolean;
   webSpeechError: string | null;
   azureError: string | null;
   playWebSpeech: (text: string, voice?: string) => void;
@@ -19,10 +20,12 @@ const SpeechContext = createContext<SpeechContextType | undefined>(undefined);
 export function SpeechSynthesisProvider({ children }: { children: React.ReactNode }) {
   const [isWebSpeechPlaying, setIsWebSpeechPlaying] = useState(false);
   const [isAzurePlaying, setIsAzurePlaying] = useState(false);
+  const [isAzureLoading, setIsAzureLoading] = useState(false);
   const [webSpeechError, setWebSpeechError] = useState<string | null>(null);
   const [azureError, setAzureError] = useState<string | null>(null);
 
   const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
+  const isAzureStoppingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -80,6 +83,10 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   };
 
   const playAzureSpeech = async (text: string, subscriptionKey: string, region: string) => {
+    if (isAzureLoading || isAzurePlaying) {
+      return;
+    }
+
     try {
       const { SpeechConfig, SpeechSynthesizer } = await import('microsoft-cognitiveservices-speech-sdk');
 
@@ -87,6 +94,9 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
         setAzureError('Azure subscription key and region are required');
         return;
       }
+
+      setIsAzureLoading(true);
+      setAzureError(null);
 
       stopAzureSpeech();
 
@@ -96,42 +106,59 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
 
       const synthesizer = new SpeechSynthesizer(speechConfig);
       azureSpeechRef.current = synthesizer;
+      isAzureStoppingRef.current = false;
 
+      setIsAzureLoading(false);
       setIsAzurePlaying(true);
-      setAzureError(null);
 
       synthesizer.speakTextAsync(
         text,
         () => {
-          setIsAzurePlaying(false);
+          if (!isAzureStoppingRef.current) {
+            setIsAzurePlaying(false);
+          }
           synthesizer.close();
           azureSpeechRef.current = null;
+          isAzureStoppingRef.current = false;
         },
         (error) => {
-          setIsAzurePlaying(false);
-          setAzureError(`Azure Speech Error: ${error}`);
+          if (!isAzureStoppingRef.current) {
+            setIsAzurePlaying(false);
+            setAzureError(`Azure Speech Error: ${error}`);
+          }
           synthesizer.close();
           azureSpeechRef.current = null;
+          isAzureStoppingRef.current = false;
         }
       );
     } catch (error) {
+      setIsAzureLoading(false);
       setIsAzurePlaying(false);
       setAzureError(`Azure Speech Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const stopAzureSpeech = () => {
-    if (azureSpeechRef.current) {
-      azureSpeechRef.current.close();
+    if (azureSpeechRef.current && !isAzureStoppingRef.current) {
+      isAzureStoppingRef.current = true;
+      setIsAzurePlaying(false);
+
+      try {
+        azureSpeechRef.current.close();
+      } catch (error) {
+        console.warn('Error closing Azure speech synthesizer:', error);
+      }
+
       azureSpeechRef.current = null;
     }
-    setIsAzurePlaying(false);
+    setIsAzureLoading(false);
   };
 
   return (
     <SpeechContext.Provider value={{
       isWebSpeechPlaying,
       isAzurePlaying,
+      isAzureLoading,
       webSpeechError,
       azureError,
       playWebSpeech,

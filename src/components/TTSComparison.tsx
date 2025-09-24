@@ -7,6 +7,7 @@ export default function TTSComparison() {
   const {
     isWebSpeechPlaying,
     isAzurePlaying,
+    isAzureLoading,
     webSpeechError,
     azureError,
     playWebSpeech,
@@ -46,7 +47,7 @@ The role of accountants is expanding beyond traditional financial reporting to i
   };
 
   const handleAzureSpeechToggle = () => {
-    if (isAzurePlaying) {
+    if (isAzurePlaying || isAzureLoading) {
       stopAzureSpeech();
     } else {
       const subscriptionKey = process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY || '';
@@ -107,14 +108,19 @@ The role of accountants is expanding beyond traditional financial reporting to i
 
               <button
                 onClick={handleAzureSpeechToggle}
+                disabled={isAzureLoading}
                 className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
                   isAzurePlaying
                     ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                    : isAzureLoading
+                    ? 'bg-yellow-600 text-white'
                     : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
                 <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isAzurePlaying ? (
+                  {isAzureLoading ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  ) : isAzurePlaying ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   ) : (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -122,10 +128,10 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 </svg>
                 <div className="text-left min-w-0">
                   <div className="font-medium">
-                    {isAzurePlaying ? 'Stop Speaking' : 'Azure AI Speech'}
+                    {isAzureLoading ? 'Initializing...' : isAzurePlaying ? 'Stop Speaking' : 'Azure AI Speech'}
                   </div>
                   <div className="text-xs opacity-90">
-                    {isAzurePlaying ? 'Click to stop' : 'Cloud • Premium'}
+                    {isAzureLoading ? 'Please wait' : isAzurePlaying ? 'Click to stop' : 'Cloud • Premium'}
                   </div>
                 </div>
               </button>
