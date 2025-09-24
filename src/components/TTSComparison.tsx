@@ -122,7 +122,7 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 </svg>
                 <div className="text-left min-w-0">
                   <div className="font-medium">
-                    {isAzurePlaying ? 'Stop Speaking' : 'Azure AI'}
+                    {isAzurePlaying ? 'Stop Speaking' : 'Azure AI Speech'}
                   </div>
                   <div className="text-xs opacity-90">
                     {isAzurePlaying ? 'Click to stop' : 'Cloud • Premium'}
