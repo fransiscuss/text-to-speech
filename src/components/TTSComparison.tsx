@@ -168,10 +168,15 @@ The role of accountants is expanding beyond traditional financial reporting to i
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Built into modern browsers</li>
               <li>• No API keys required</li>
-              <li>• Free to use</li>
+              <li>• Completely free</li>
+              <li>• No usage limits</li>
               <li>• Works offline</li>
               <li>• Multiple voice options</li>
             </ul>
+            <div className="mt-4 p-3 bg-blue-100 rounded-md">
+              <div className="text-xs font-medium text-blue-900">Pricing</div>
+              <div className="text-sm text-blue-800">Free - No charges</div>
+            </div>
           </div>
 
           <div className="bg-green-50 p-6 rounded-lg">
@@ -187,7 +192,16 @@ The role of accountants is expanding beyond traditional financial reporting to i
               <li>• 100+ languages supported</li>
               <li>• Custom voice training</li>
               <li>• Enterprise-grade reliability</li>
+              <li>• Advanced SSML features</li>
             </ul>
+            <div className="mt-4 p-3 bg-green-100 rounded-md">
+              <div className="text-xs font-medium text-green-900">Pricing</div>
+              <div className="text-sm text-green-800">
+                <div>• Free tier: 0.5M chars/month</div>
+                <div>• Standard: $4.00 per 1M chars</div>
+                <div>• Pay-as-you-go pricing</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
