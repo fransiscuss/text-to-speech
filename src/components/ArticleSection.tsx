@@ -40,7 +40,7 @@ export default function ArticleSection() {
             <h4 className="text-xl font-semibold text-gray-700 mb-3">Key Features:</h4>
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li><strong>Free and Built-in:</strong> No subscription fees or API costs</li>
-              <li><strong>Privacy-Focused:</strong> All processing happens locally on the user's device</li>
+              <li><strong>Privacy-Focused:</strong> All processing happens locally on the user&apos;s device</li>
               <li><strong>Offline Capability:</strong> Works without internet connection</li>
               <li><strong>Multiple Voices:</strong> Access to system-installed voices in various languages</li>
               <li><strong>Low Latency:</strong> Fast response time for immediate playback</li>
@@ -49,7 +49,7 @@ export default function ArticleSection() {
 
             <h4 className="text-xl font-semibold text-gray-700 mb-3">Limitations:</h4>
             <ul className="list-disc pl-6 space-y-2 mb-4">
-              <li><strong>Quality Variability:</strong> Voice quality depends on the user's system</li>
+              <li><strong>Quality Variability:</strong> Voice quality depends on the user&apos;s system</li>
               <li><strong>Browser Support:</strong> Not supported in all browsers equally</li>
               <li><strong>Limited Customization:</strong> Few options for voice modification</li>
               <li><strong>Inconsistent Experience:</strong> Different voices across devices and platforms</li>
@@ -70,7 +70,7 @@ speechSynthesis.speak(utterance);`}</code>
             <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
               <h4 className="font-semibold text-green-800 mb-2">Cloud-Based Enterprise Solution</h4>
               <p className="text-green-700">
-                Azure AI Speech is Microsoft's cloud-based speech service that provides
+                Azure AI Speech is Microsoft&apos;s cloud-based speech service that provides
                 high-quality neural voice synthesis with advanced features and customization options.
               </p>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { SpeechSynthesizer } from 'microsoft-cognitiveservices-speech-sdk';
 
 interface SpeechContextType {
   isWebSpeechPlaying: boolean;
@@ -21,7 +22,7 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   const [webSpeechError, setWebSpeechError] = useState<string | null>(null);
   const [azureError, setAzureError] = useState<string | null>(null);
 
-  const azureSpeechRef = useRef<any>(null);
+  const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
 
   useEffect(() => {
     return () => {
@@ -101,7 +102,7 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
 
       synthesizer.speakTextAsync(
         text,
-        (result) => {
+        () => {
           setIsAzurePlaying(false);
           synthesizer.close();
           azureSpeechRef.current = null;

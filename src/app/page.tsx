@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { SpeechSynthesisProvider } from '@/components/SpeechSynthesisProvider';
 import TTSComparison from '@/components/TTSComparison';
 
