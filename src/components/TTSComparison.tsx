@@ -94,102 +94,106 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 Listen to Article
               </h3>
 
-              <button
-                onClick={handleWebSpeechToggle}
-                disabled={!hasWebSpeech}
-                className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
-                  isWebSpeechPlaying
-                    ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-              >
-                <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isWebSpeechPlaying ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  )}
-                </svg>
-                <div className="text-left min-w-0">
-                  <div className="font-medium">
-                    {isWebSpeechPlaying ? 'Stop Speaking' : 'Web Speech'}
-                  </div>
-                  <div className="text-xs opacity-90">
-                    {isWebSpeechPlaying ? 'Click to stop' : 'Browser • Free'}
-                  </div>
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="space-y-2">
+                  <label htmlFor="web-voice-select" className="block text-sm font-medium text-gray-700">
+                    Web Speech Voice
+                  </label>
+                  <select
+                    id="web-voice-select"
+                    value={selectedVoice || ''}
+                    onChange={handleVoiceChange}
+                    disabled={!hasWebSpeech || availableVoices.length === 0}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                  >
+                    {availableVoices.length === 0 ? (
+                      <option value="" className="text-gray-900">No voices available</option>
+                    ) : (
+                      availableVoices.map((voice) => (
+                        <option key={voice.name} value={voice.name} className="text-gray-900">
+                          {voice.name} ({voice.lang}){voice.default ? ' - Default' : ''}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
-              </button>
 
-              <div className="space-y-2">
-                <label htmlFor="web-voice-select" className="block text-sm font-medium text-gray-700">
-                  Web Speech Voice
-                </label>
-                <select
-                  id="web-voice-select"
-                  value={selectedVoice || ''}
-                  onChange={handleVoiceChange}
-                  disabled={!hasWebSpeech || availableVoices.length === 0}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                <button
+                  onClick={handleWebSpeechToggle}
+                  disabled={!hasWebSpeech}
+                  className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
+                    isWebSpeechPlaying
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  {availableVoices.length === 0 ? (
-                    <option value="" className="text-gray-900">No voices available</option>
-                  ) : (
-                    availableVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name} className="text-gray-900">
-                        {voice.name} ({voice.lang}){voice.default ? ' - Default' : ''}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isWebSpeechPlaying ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    )}
+                  </svg>
+                  <div className="text-left min-w-0">
+                    <div className="font-medium">
+                      {isWebSpeechPlaying ? 'Stop Speaking' : 'Web Speech'}
+                    </div>
+                    <div className="text-xs opacity-90">
+                      {isWebSpeechPlaying ? 'Click to stop' : 'Browser • Free'}
+                    </div>
+                  </div>
+                </button>
               </div>
 
-              <button
-                onClick={handleAzureSpeechToggle}
-                disabled={isAzureLoading}
-                className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
-                  isAzurePlaying
-                    ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
-                    : isAzureLoading
-                    ? 'bg-yellow-600 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isAzureLoading ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  ) : isAzurePlaying ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  )}
-                </svg>
-                <div className="text-left min-w-0">
-                  <div className="font-medium">
-                    {isAzureLoading ? 'Initializing...' : isAzurePlaying ? 'Stop Speaking' : 'Azure AI Speech'}
-                  </div>
-                  <div className="text-xs opacity-90">
-                    {isAzureLoading ? 'Please wait' : isAzurePlaying ? 'Click to stop' : 'Cloud • Premium'}
-                  </div>
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="space-y-2">
+                  <label htmlFor="azure-voice-select" className="block text-sm font-medium text-gray-700">
+                    Azure AI Voice
+                  </label>
+                  <select
+                    id="azure-voice-select"
+                    value={selectedAzureVoice || ''}
+                    onChange={handleAzureVoiceChange}
+                    disabled={isAzureLoading || isAzurePlaying}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                  >
+                    {azureVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name} className="text-gray-900">
+                        {voice.name} ({voice.gender}){voice.name === 'en-US-JennyMultilingualNeural' ? ' - Default' : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </button>
 
-              <div className="space-y-2">
-                <label htmlFor="azure-voice-select" className="block text-sm font-medium text-gray-700">
-                  Azure AI Voice
-                </label>
-                <select
-                  id="azure-voice-select"
-                  value={selectedAzureVoice || ''}
-                  onChange={handleAzureVoiceChange}
-                  disabled={isAzureLoading || isAzurePlaying}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                <button
+                  onClick={handleAzureSpeechToggle}
+                  disabled={isAzureLoading}
+                  className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
+                    isAzurePlaying
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : isAzureLoading
+                      ? 'bg-yellow-600 text-white'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
                 >
-                  {azureVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name} className="text-gray-900">
-                      {voice.name} ({voice.gender}){voice.name === 'en-US-JennyMultilingualNeural' ? ' - Default' : ''}
-                    </option>
-                  ))}
-                </select>
+                  <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isAzureLoading ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    ) : isAzurePlaying ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    )}
+                  </svg>
+                  <div className="text-left min-w-0">
+                    <div className="font-medium">
+                      {isAzureLoading ? 'Initializing...' : isAzurePlaying ? 'Stop Speaking' : 'Azure AI Speech'}
+                    </div>
+                    <div className="text-xs opacity-90">
+                      {isAzureLoading ? 'Please wait' : isAzurePlaying ? 'Click to stop' : 'Cloud • Premium'}
+                    </div>
+                  </div>
+                </button>
               </div>
 
               <div className="space-y-2">
