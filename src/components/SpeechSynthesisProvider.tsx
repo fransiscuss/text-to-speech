@@ -9,10 +9,13 @@ interface SpeechContextType {
   isAzureLoading: boolean;
   webSpeechError: string | null;
   azureError: string | null;
+  availableVoices: Array<{ name: string; lang: string; default: boolean }>;
+  selectedVoice: string | null;
   playWebSpeech: (text: string, voice?: string) => void;
   stopWebSpeech: () => void;
   playAzureSpeech: (text: string, subscriptionKey: string, region: string) => void;
   stopAzureSpeech: () => void;
+  setSelectedVoiceName: (voiceName: string) => void;
 }
 
 const SpeechContext = createContext<SpeechContextType | undefined>(undefined);
@@ -23,18 +26,52 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   const [isAzureLoading, setIsAzureLoading] = useState(false);
   const [webSpeechError, setWebSpeechError] = useState<string | null>(null);
   const [azureError, setAzureError] = useState<string | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<Array<{ name: string; lang: string; default: boolean }>>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
 
   const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
   const isAzureStoppingRef = useRef(false);
 
   useEffect(() => {
+    const loadVoices = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const voices = window.speechSynthesis.getVoices();
+
+        const filteredVoices = voices
+          .filter(voice => voice.lang.startsWith('en-'))
+          .map(voice => ({
+            name: voice.name,
+            lang: voice.lang,
+            default: voice.default
+          }))
+          .sort((a, b) => {
+            if (a.default && !b.default) return -1;
+            if (!a.default && b.default) return 1;
+            return a.name.localeCompare(b.name);
+          });
+
+        setAvailableVoices(filteredVoices);
+
+        if (filteredVoices.length > 0 && !selectedVoice) {
+          const defaultVoice = filteredVoices.find(voice => voice.default) || filteredVoices[0];
+          setSelectedVoice(defaultVoice.name);
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
     return () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
+        window.speechSynthesis.onvoiceschanged = null;
       }
       stopAzureSpeech();
     };
-  }, []);
+  }, [selectedVoice]);
 
   const playWebSpeech = (text: string, voice?: string) => {
     if (!window.speechSynthesis) {
@@ -154,6 +191,10 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     setIsAzureLoading(false);
   };
 
+  const setSelectedVoiceName = (voiceName: string) => {
+    setSelectedVoice(voiceName);
+  };
+
   return (
     <SpeechContext.Provider value={{
       isWebSpeechPlaying,
@@ -161,10 +202,13 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       isAzureLoading,
       webSpeechError,
       azureError,
+      availableVoices,
+      selectedVoice,
       playWebSpeech,
       stopWebSpeech,
       playAzureSpeech,
       stopAzureSpeech,
+      setSelectedVoiceName,
     }}>
       {children}
     </SpeechContext.Provider>

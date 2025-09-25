@@ -10,10 +10,13 @@ export default function TTSComparison() {
     isAzureLoading,
     webSpeechError,
     azureError,
+    availableVoices,
+    selectedVoice,
     playWebSpeech,
     stopWebSpeech,
     playAzureSpeech,
-    stopAzureSpeech
+    stopAzureSpeech,
+    setSelectedVoiceName
   } = useSpeech();
 
   const [hasWebSpeech, setHasWebSpeech] = useState(false);
@@ -42,8 +45,12 @@ The role of accountants is expanding beyond traditional financial reporting to i
     if (isWebSpeechPlaying) {
       stopWebSpeech();
     } else {
-      playWebSpeech(articleText);
+      playWebSpeech(articleText, selectedVoice || undefined);
     }
+  };
+
+  const handleVoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedVoiceName(event.target.value);
   };
 
   const handleAzureSpeechToggle = () => {
@@ -105,6 +112,29 @@ The role of accountants is expanding beyond traditional financial reporting to i
                   </div>
                 </div>
               </button>
+
+              <div className="space-y-2">
+                <label htmlFor="voice-select" className="block text-sm font-medium text-gray-700">
+                  Select Voice
+                </label>
+                <select
+                  id="voice-select"
+                  value={selectedVoice || ''}
+                  onChange={handleVoiceChange}
+                  disabled={!hasWebSpeech || availableVoices.length === 0}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                >
+                  {availableVoices.length === 0 ? (
+                    <option value="">No voices available</option>
+                  ) : (
+                    availableVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang}){voice.default ? ' - Default' : ''}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
 
               <button
                 onClick={handleAzureSpeechToggle}
