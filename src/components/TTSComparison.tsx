@@ -12,11 +12,14 @@ export default function TTSComparison() {
     azureError,
     availableVoices,
     selectedVoice,
+    azureVoices,
+    selectedAzureVoice,
     playWebSpeech,
     stopWebSpeech,
     playAzureSpeech,
     stopAzureSpeech,
-    setSelectedVoiceName
+    setSelectedVoiceName,
+    setSelectedAzureVoiceName
   } = useSpeech();
 
   const [hasWebSpeech, setHasWebSpeech] = useState(false);
@@ -51,6 +54,10 @@ The role of accountants is expanding beyond traditional financial reporting to i
 
   const handleVoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedVoiceName(event.target.value);
+  };
+
+  const handleAzureVoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedAzureVoiceName(event.target.value);
   };
 
   const handleAzureSpeechToggle = () => {
@@ -114,21 +121,21 @@ The role of accountants is expanding beyond traditional financial reporting to i
               </button>
 
               <div className="space-y-2">
-                <label htmlFor="voice-select" className="block text-sm font-medium text-gray-700">
-                  Select Voice
+                <label htmlFor="web-voice-select" className="block text-sm font-medium text-gray-700">
+                  Web Speech Voice
                 </label>
                 <select
-                  id="voice-select"
+                  id="web-voice-select"
                   value={selectedVoice || ''}
                   onChange={handleVoiceChange}
                   disabled={!hasWebSpeech || availableVoices.length === 0}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
                 >
                   {availableVoices.length === 0 ? (
-                    <option value="">No voices available</option>
+                    <option value="" className="text-gray-900">No voices available</option>
                   ) : (
                     availableVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>
+                      <option key={voice.name} value={voice.name} className="text-gray-900">
                         {voice.name} ({voice.lang}){voice.default ? ' - Default' : ''}
                       </option>
                     ))
@@ -165,6 +172,25 @@ The role of accountants is expanding beyond traditional financial reporting to i
                   </div>
                 </div>
               </button>
+
+              <div className="space-y-2">
+                <label htmlFor="azure-voice-select" className="block text-sm font-medium text-gray-700">
+                  Azure AI Voice
+                </label>
+                <select
+                  id="azure-voice-select"
+                  value={selectedAzureVoice || ''}
+                  onChange={handleAzureVoiceChange}
+                  disabled={isAzureLoading || isAzurePlaying}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                >
+                  {azureVoices.map((voice) => (
+                    <option key={voice.name} value={voice.name} className="text-gray-900">
+                      {voice.name} ({voice.gender}){voice.name === 'en-US-JennyMultilingualNeural' ? ' - Default' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-2">
                 {webSpeechError && (

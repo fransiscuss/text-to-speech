@@ -11,11 +11,14 @@ interface SpeechContextType {
   azureError: string | null;
   availableVoices: Array<{ name: string; lang: string; default: boolean }>;
   selectedVoice: string | null;
+  azureVoices: Array<{ name: string; lang: string; gender: string }>;
+  selectedAzureVoice: string | null;
   playWebSpeech: (text: string, voice?: string) => void;
   stopWebSpeech: () => void;
   playAzureSpeech: (text: string, subscriptionKey: string, region: string) => void;
   stopAzureSpeech: () => void;
   setSelectedVoiceName: (voiceName: string) => void;
+  setSelectedAzureVoiceName: (voiceName: string) => void;
 }
 
 const SpeechContext = createContext<SpeechContextType | undefined>(undefined);
@@ -28,6 +31,8 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   const [azureError, setAzureError] = useState<string | null>(null);
   const [availableVoices, setAvailableVoices] = useState<Array<{ name: string; lang: string; default: boolean }>>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [azureVoices, setAzureVoices] = useState<Array<{ name: string; lang: string; gender: string }>>([]);
+  const [selectedAzureVoice, setSelectedAzureVoice] = useState<string | null>(null);
 
   const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
   const isAzureStoppingRef = useRef(false);
@@ -64,6 +69,41 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       loadVoices();
     }
 
+    const azureEnglishVoices = [
+      { name: 'en-US-AvaMultilingualNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-JennyMultilingualNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-GuyMultilingualNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-EmmaMultilingualNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-BrianMultilingualNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-AriaNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-DavisNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-JaneNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-JasonNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-SaraNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-TonyNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-NancyNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-AmberNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-AnaNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-AshleyNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-BrandonNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-ChristopherNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-CoraNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-ElizabethNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-EricNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-JacobNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-JessicaNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-MichelleNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-MonicaNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-NancyNeural', lang: 'en-US', gender: 'Female' },
+      { name: 'en-US-RogerNeural', lang: 'en-US', gender: 'Male' },
+      { name: 'en-US-SteffanNeural', lang: 'en-US', gender: 'Male' }
+    ];
+    setAzureVoices(azureEnglishVoices);
+
+    if (!selectedAzureVoice) {
+      setSelectedAzureVoice('en-US-JennyMultilingualNeural');
+    }
+
     return () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -71,7 +111,7 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       }
       stopAzureSpeech();
     };
-  }, [selectedVoice]);
+  }, [selectedVoice, selectedAzureVoice]);
 
   const playWebSpeech = (text: string, voice?: string) => {
     if (!window.speechSynthesis) {
@@ -139,7 +179,7 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
 
       const speechConfig = SpeechConfig.fromSubscription(subscriptionKey, region);
       speechConfig.speechSynthesisLanguage = 'en-US';
-      speechConfig.speechSynthesisVoiceName = 'en-US-JennyMultilingualNeural';
+      speechConfig.speechSynthesisVoiceName = selectedAzureVoice || 'en-US-JennyMultilingualNeural';
 
       const synthesizer = new SpeechSynthesizer(speechConfig);
       azureSpeechRef.current = synthesizer;
@@ -195,6 +235,10 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     setSelectedVoice(voiceName);
   };
 
+  const setSelectedAzureVoiceName = (voiceName: string) => {
+    setSelectedAzureVoice(voiceName);
+  };
+
   return (
     <SpeechContext.Provider value={{
       isWebSpeechPlaying,
@@ -204,11 +248,14 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       azureError,
       availableVoices,
       selectedVoice,
+      azureVoices,
+      selectedAzureVoice,
       playWebSpeech,
       stopWebSpeech,
       playAzureSpeech,
       stopAzureSpeech,
       setSelectedVoiceName,
+      setSelectedAzureVoiceName,
     }}>
       {children}
     </SpeechContext.Provider>
