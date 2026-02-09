@@ -7,18 +7,26 @@ interface SpeechContextType {
   isWebSpeechPlaying: boolean;
   isAzurePlaying: boolean;
   isAzureLoading: boolean;
+  isHumePlaying: boolean;
+  isHumeLoading: boolean;
   webSpeechError: string | null;
   azureError: string | null;
+  humeError: string | null;
   availableVoices: Array<{ name: string; lang: string; default: boolean }>;
   selectedVoice: string | null;
   azureVoices: Array<{ name: string; lang: string; gender: string }>;
   selectedAzureVoice: string | null;
+  humeVoices: Array<{ name: string; description: string }>;
+  selectedHumeVoice: string | null;
   playWebSpeech: (text: string, voice?: string) => void;
   stopWebSpeech: () => void;
   playAzureSpeech: (text: string, subscriptionKey: string, region: string) => void;
   stopAzureSpeech: () => void;
+  playHumeSpeech: (text: string, apiKey: string) => void;
+  stopHumeSpeech: () => void;
   setSelectedVoiceName: (voiceName: string) => void;
   setSelectedAzureVoiceName: (voiceName: string) => void;
+  setSelectedHumeVoiceName: (voiceName: string) => void;
 }
 
 const SpeechContext = createContext<SpeechContextType | undefined>(undefined);
@@ -27,17 +35,25 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   const [isWebSpeechPlaying, setIsWebSpeechPlaying] = useState(false);
   const [isAzurePlaying, setIsAzurePlaying] = useState(false);
   const [isAzureLoading, setIsAzureLoading] = useState(false);
+  const [isHumePlaying, setIsHumePlaying] = useState(false);
+  const [isHumeLoading, setIsHumeLoading] = useState(false);
   const [webSpeechError, setWebSpeechError] = useState<string | null>(null);
   const [azureError, setAzureError] = useState<string | null>(null);
+  const [humeError, setHumeError] = useState<string | null>(null);
   const [availableVoices, setAvailableVoices] = useState<Array<{ name: string; lang: string; default: boolean }>>([]);
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [azureVoices, setAzureVoices] = useState<Array<{ name: string; lang: string; gender: string }>>([]);
   const [selectedAzureVoice, setSelectedAzureVoice] = useState<string | null>(null);
+  const [humeVoices, setHumeVoices] = useState<Array<{ name: string; description: string }>>([]);
+  const [selectedHumeVoice, setSelectedHumeVoice] = useState<string | null>(null);
 
   const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
   const azureSpeakerRef = useRef<SpeakerAudioDestination | null>(null);
   const isAzureStoppingRef = useRef(false);
   const isAzureBusyRef = useRef(false);
+
+  const humeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isHumeBusyRef = useRef(false);
 
   const stopAzureSpeech = useCallback(() => {
     isAzureStoppingRef.current = true;
@@ -68,6 +84,25 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     }
 
     isAzureBusyRef.current = false;
+  }, []);
+
+  const stopHumeSpeech = useCallback(() => {
+    if (humeAudioRef.current) {
+      try {
+        humeAudioRef.current.pause();
+        humeAudioRef.current.currentTime = 0;
+        if (humeAudioRef.current.src) {
+          URL.revokeObjectURL(humeAudioRef.current.src);
+        }
+      } catch (error) {
+        console.warn('Error stopping Hume audio:', error);
+      }
+      humeAudioRef.current = null;
+    }
+
+    setIsHumePlaying(false);
+    setIsHumeLoading(false);
+    isHumeBusyRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -136,14 +171,33 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       setSelectedAzureVoice('en-US-JennyMultilingualNeural');
     }
 
+    const humeVoiceList = [
+      { name: 'Ava Song', description: 'Warm female voice' },
+      { name: 'Donovan Sinclair', description: 'Professional male voice' },
+      { name: 'Vince Douglas', description: 'Enthusiastic male voice' },
+      { name: 'Male English Actor', description: 'British male actor' },
+      { name: 'Stella Karter', description: 'Energetic female voice' },
+      { name: 'Dacher', description: 'Calm male voice' },
+      { name: 'Aura', description: 'Soft female voice' },
+      { name: 'Kora', description: 'Clear female voice' },
+      { name: 'Finn', description: 'Friendly male voice' },
+      { name: 'Zeke', description: 'Deep male voice' },
+    ];
+    setHumeVoices(humeVoiceList);
+
+    if (!selectedHumeVoice) {
+      setSelectedHumeVoice('Ava Song');
+    }
+
     return () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
         window.speechSynthesis.onvoiceschanged = null;
       }
       stopAzureSpeech();
+      stopHumeSpeech();
     };
-  }, [selectedVoice, selectedAzureVoice, stopAzureSpeech]);
+  }, [selectedVoice, selectedAzureVoice, selectedHumeVoice, stopAzureSpeech, stopHumeSpeech]);
 
   const playWebSpeech = (text: string, voice?: string) => {
     if (!window.speechSynthesis) {
@@ -260,7 +314,90 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     }
   }, [selectedAzureVoice, stopAzureSpeech]);
 
+  const playHumeSpeech = useCallback(async (text: string, apiKey: string) => {
+    if (isHumeBusyRef.current) {
+      return;
+    }
 
+    if (!apiKey) {
+      setHumeError('Hume API key is required');
+      return;
+    }
+
+    setHumeError(null);
+    stopHumeSpeech();
+
+    isHumeBusyRef.current = true;
+    setIsHumeLoading(true);
+
+    const voiceName = selectedHumeVoice || 'Ava Song';
+
+    try {
+      const response = await fetch('https://api.hume.ai/v0/tts/file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Hume-Api-Key': apiKey,
+        },
+        body: JSON.stringify({
+          utterances: [
+            {
+              text,
+              voice: {
+                name: voiceName,
+                provider: 'HUME_AI',
+              },
+            },
+          ],
+          format: {
+            type: 'mp3',
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage: string;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.detail || errorText;
+        } catch {
+          errorMessage = errorText;
+        }
+        throw new Error(`API error ${response.status}: ${errorMessage}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => {
+        setIsHumePlaying(false);
+        isHumeBusyRef.current = false;
+        URL.revokeObjectURL(audioUrl);
+        humeAudioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        setIsHumePlaying(false);
+        setHumeError('Hume Error: Failed to play audio');
+        isHumeBusyRef.current = false;
+        URL.revokeObjectURL(audioUrl);
+        humeAudioRef.current = null;
+      };
+
+      humeAudioRef.current = audio;
+      setIsHumeLoading(false);
+      setIsHumePlaying(true);
+
+      await audio.play();
+    } catch (error) {
+      setIsHumeLoading(false);
+      setIsHumePlaying(false);
+      isHumeBusyRef.current = false;
+      setHumeError(`Hume Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [selectedHumeVoice, stopHumeSpeech]);
 
   const setSelectedVoiceName = (voiceName: string) => {
     setSelectedVoice(voiceName);
@@ -270,23 +407,35 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     setSelectedAzureVoice(voiceName);
   };
 
+  const setSelectedHumeVoiceName = (voiceName: string) => {
+    setSelectedHumeVoice(voiceName);
+  };
+
   return (
     <SpeechContext.Provider value={{
       isWebSpeechPlaying,
       isAzurePlaying,
       isAzureLoading,
+      isHumePlaying,
+      isHumeLoading,
       webSpeechError,
       azureError,
+      humeError,
       availableVoices,
       selectedVoice,
       azureVoices,
       selectedAzureVoice,
+      humeVoices,
+      selectedHumeVoice,
       playWebSpeech,
       stopWebSpeech,
       playAzureSpeech,
       stopAzureSpeech,
+      playHumeSpeech,
+      stopHumeSpeech,
       setSelectedVoiceName,
       setSelectedAzureVoiceName,
+      setSelectedHumeVoiceName,
     }}>
       {children}
     </SpeechContext.Provider>

@@ -8,18 +8,26 @@ export default function TTSComparison() {
     isWebSpeechPlaying,
     isAzurePlaying,
     isAzureLoading,
+    isHumePlaying,
+    isHumeLoading,
     webSpeechError,
     azureError,
+    humeError,
     availableVoices,
     selectedVoice,
     azureVoices,
     selectedAzureVoice,
+    humeVoices,
+    selectedHumeVoice,
     playWebSpeech,
     stopWebSpeech,
     playAzureSpeech,
     stopAzureSpeech,
+    playHumeSpeech,
+    stopHumeSpeech,
     setSelectedVoiceName,
-    setSelectedAzureVoiceName
+    setSelectedAzureVoiceName,
+    setSelectedHumeVoiceName
   } = useSpeech();
 
   const hasWebSpeech = useSyncExternalStore(
@@ -58,6 +66,10 @@ The role of accountants is expanding beyond traditional financial reporting to i
     setSelectedAzureVoiceName(event.target.value);
   };
 
+  const handleHumeVoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedHumeVoiceName(event.target.value);
+  };
+
   const handleAzureSpeechToggle = () => {
     if (isAzurePlaying || isAzureLoading) {
       stopAzureSpeech();
@@ -65,6 +77,15 @@ The role of accountants is expanding beyond traditional financial reporting to i
       const subscriptionKey = process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY || '';
       const region = process.env.NEXT_PUBLIC_AZURE_SPEECH_REGION || 'eastus';
       playAzureSpeech(articleText, subscriptionKey, region);
+    }
+  };
+
+  const handleHumeSpeechToggle = () => {
+    if (isHumePlaying || isHumeLoading) {
+      stopHumeSpeech();
+    } else {
+      const apiKey = process.env.NEXT_PUBLIC_HUME_API_KEY || '';
+      playHumeSpeech(articleText, apiKey);
     }
   };
 
@@ -194,6 +215,57 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 </button>
               </div>
 
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="space-y-2">
+                  <label htmlFor="hume-voice-select" className="block text-sm font-medium text-gray-700">
+                    Hume AI Voice
+                  </label>
+                  <select
+                    id="hume-voice-select"
+                    value={selectedHumeVoice || ''}
+                    onChange={handleHumeVoiceChange}
+                    disabled={isHumeLoading || isHumePlaying}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm text-gray-900"
+                  >
+                    {humeVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name} className="text-gray-900">
+                        {voice.name} ({voice.description}){voice.name === 'Ava Song' ? ' - Default' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleHumeSpeechToggle}
+                  disabled={isHumeLoading}
+                  className={`w-full flex items-center gap-3 font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none ${
+                    isHumePlaying
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : isHumeLoading
+                      ? 'bg-yellow-600 text-white'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
+                >
+                  <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isHumeLoading ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    ) : isHumePlaying ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    )}
+                  </svg>
+                  <div className="text-left min-w-0">
+                    <div className="font-medium">
+                      {isHumeLoading ? 'Generating...' : isHumePlaying ? 'Stop Speaking' : 'Hume AI'}
+                    </div>
+                    <div className="text-xs opacity-90">
+                      {isHumeLoading ? 'Please wait' : isHumePlaying ? 'Click to stop' : 'Empathic • Expressive'}
+                    </div>
+                  </div>
+                </button>
+              </div>
+
               <div className="space-y-2">
                 {webSpeechError && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded-md text-sm">
@@ -203,6 +275,11 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 {azureError && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded-md text-sm">
                     Azure: {azureError}
+                  </div>
+                )}
+                {humeError && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded-md text-sm">
+                    Hume AI: {humeError}
                   </div>
                 )}
                 {!hasWebSpeech && (
@@ -215,7 +292,7 @@ The role of accountants is expanding beyond traditional financial reporting to i
           </div>
         </div>
 
-        <div className="mt-8 grid md:grid-cols-2 gap-6">
+        <div className="mt-8 grid md:grid-cols-3 gap-6">
           <div className="bg-blue-50 p-6 rounded-lg">
             <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,6 +335,31 @@ The role of accountants is expanding beyond traditional financial reporting to i
                 <div>• Free tier: 0.5M chars/month</div>
                 <div>• Standard: $4.00 per 1M chars</div>
                 <div>• Pay-as-you-go pricing</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 p-6 rounded-lg">
+            <h4 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              Hume AI (Octave)
+            </h4>
+            <ul className="text-sm text-purple-700 space-y-1">
+              <li>• Empathic speech-language model</li>
+              <li>• Context-aware expression</li>
+              <li>• 11+ languages supported</li>
+              <li>• Voice cloning & design</li>
+              <li>• Acting instructions control</li>
+              <li>• ~200ms time-to-first-token</li>
+            </ul>
+            <div className="mt-4 p-3 bg-purple-100 rounded-md">
+              <div className="text-xs font-medium text-purple-900">Pricing</div>
+              <div className="text-sm text-purple-800">
+                <div>• Free tier: 10K chars/day</div>
+                <div>• Growth: $0.12 per 1K chars</div>
+                <div>• Enterprise: Custom pricing</div>
               </div>
             </div>
           </div>
