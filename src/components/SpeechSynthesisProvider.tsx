@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { SpeechSynthesizer } from 'microsoft-cognitiveservices-speech-sdk';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+import { SpeechSynthesizer, SpeakerAudioDestination } from 'microsoft-cognitiveservices-speech-sdk';
 
 interface SpeechContextType {
   isWebSpeechPlaying: boolean;
@@ -35,7 +35,40 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
   const [selectedAzureVoice, setSelectedAzureVoice] = useState<string | null>(null);
 
   const azureSpeechRef = useRef<SpeechSynthesizer | null>(null);
+  const azureSpeakerRef = useRef<SpeakerAudioDestination | null>(null);
   const isAzureStoppingRef = useRef(false);
+  const isAzureBusyRef = useRef(false);
+
+  const stopAzureSpeech = useCallback(() => {
+    isAzureStoppingRef.current = true;
+    setIsAzurePlaying(false);
+    setIsAzureLoading(false);
+
+    if (azureSpeakerRef.current) {
+      try {
+        azureSpeakerRef.current.pause();
+      } catch (error) {
+        console.warn('Error pausing Azure speaker:', error);
+      }
+      try {
+        azureSpeakerRef.current.close();
+      } catch (error) {
+        console.warn('Error closing Azure speaker:', error);
+      }
+      azureSpeakerRef.current = null;
+    }
+
+    if (azureSpeechRef.current) {
+      try {
+        azureSpeechRef.current.close();
+      } catch (error) {
+        console.warn('Error closing Azure speech synthesizer:', error);
+      }
+      azureSpeechRef.current = null;
+    }
+
+    isAzureBusyRef.current = false;
+  }, []);
 
   useEffect(() => {
     const loadVoices = () => {
@@ -94,7 +127,6 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       { name: 'en-US-JessicaNeural', lang: 'en-US', gender: 'Female' },
       { name: 'en-US-MichelleNeural', lang: 'en-US', gender: 'Female' },
       { name: 'en-US-MonicaNeural', lang: 'en-US', gender: 'Female' },
-      { name: 'en-US-NancyNeural', lang: 'en-US', gender: 'Female' },
       { name: 'en-US-RogerNeural', lang: 'en-US', gender: 'Male' },
       { name: 'en-US-SteffanNeural', lang: 'en-US', gender: 'Male' }
     ];
@@ -111,7 +143,7 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       }
       stopAzureSpeech();
     };
-  }, [selectedVoice, selectedAzureVoice]);
+  }, [selectedVoice, selectedAzureVoice, stopAzureSpeech]);
 
   const playWebSpeech = (text: string, voice?: string) => {
     if (!window.speechSynthesis) {
@@ -142,7 +174,9 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
 
       utterance.onerror = (event) => {
         setIsWebSpeechPlaying(false);
-        setWebSpeechError(`Web Speech Error: ${event.error}`);
+        if (event.error !== 'interrupted' && event.error !== 'canceled') {
+          setWebSpeechError(`Web Speech Error: ${event.error}`);
+        }
       };
 
       window.speechSynthesis.speak(utterance);
@@ -159,29 +193,43 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
     }
   };
 
-  const playAzureSpeech = async (text: string, subscriptionKey: string, region: string) => {
-    if (isAzureLoading || isAzurePlaying) {
+  const playAzureSpeech = useCallback(async (text: string, subscriptionKey: string, region: string) => {
+    if (isAzureBusyRef.current) {
       return;
     }
 
     try {
-      const { SpeechConfig, SpeechSynthesizer } = await import('microsoft-cognitiveservices-speech-sdk');
+      const { SpeechConfig, AudioConfig, SpeakerAudioDestination, SpeechSynthesizer } = await import('microsoft-cognitiveservices-speech-sdk');
 
       if (!subscriptionKey || !region) {
         setAzureError('Azure subscription key and region are required');
         return;
       }
 
-      setIsAzureLoading(true);
       setAzureError(null);
 
+      // Stop any existing speech first
       stopAzureSpeech();
+
+      isAzureBusyRef.current = true;
+      setIsAzureLoading(true);
 
       const speechConfig = SpeechConfig.fromSubscription(subscriptionKey, region);
       speechConfig.speechSynthesisLanguage = 'en-US';
       speechConfig.speechSynthesisVoiceName = selectedAzureVoice || 'en-US-JennyMultilingualNeural';
 
-      const synthesizer = new SpeechSynthesizer(speechConfig);
+      const player = new SpeakerAudioDestination();
+      azureSpeakerRef.current = player;
+
+      player.onAudioEnd = () => {
+        if (!isAzureStoppingRef.current) {
+          setIsAzurePlaying(false);
+          isAzureBusyRef.current = false;
+        }
+      };
+
+      const audioConfig = AudioConfig.fromSpeakerOutput(player);
+      const synthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
       azureSpeechRef.current = synthesizer;
       isAzureStoppingRef.current = false;
 
@@ -191,45 +239,28 @@ export function SpeechSynthesisProvider({ children }: { children: React.ReactNod
       synthesizer.speakTextAsync(
         text,
         () => {
-          if (!isAzureStoppingRef.current) {
-            setIsAzurePlaying(false);
-          }
           synthesizer.close();
           azureSpeechRef.current = null;
-          isAzureStoppingRef.current = false;
         },
         (error) => {
           if (!isAzureStoppingRef.current) {
             setIsAzurePlaying(false);
             setAzureError(`Azure Speech Error: ${error}`);
+            isAzureBusyRef.current = false;
           }
           synthesizer.close();
           azureSpeechRef.current = null;
-          isAzureStoppingRef.current = false;
         }
       );
     } catch (error) {
       setIsAzureLoading(false);
       setIsAzurePlaying(false);
+      isAzureBusyRef.current = false;
       setAzureError(`Azure Speech Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
+  }, [selectedAzureVoice, stopAzureSpeech]);
 
-  const stopAzureSpeech = () => {
-    if (azureSpeechRef.current && !isAzureStoppingRef.current) {
-      isAzureStoppingRef.current = true;
-      setIsAzurePlaying(false);
 
-      try {
-        azureSpeechRef.current.close();
-      } catch (error) {
-        console.warn('Error closing Azure speech synthesizer:', error);
-      }
-
-      azureSpeechRef.current = null;
-    }
-    setIsAzureLoading(false);
-  };
 
   const setSelectedVoiceName = (voiceName: string) => {
     setSelectedVoice(voiceName);

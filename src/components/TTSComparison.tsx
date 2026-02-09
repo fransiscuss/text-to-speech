@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useSpeech } from './SpeechSynthesisProvider';
 
 export default function TTSComparison() {
@@ -22,13 +22,11 @@ export default function TTSComparison() {
     setSelectedAzureVoiceName
   } = useSpeech();
 
-  const [hasWebSpeech, setHasWebSpeech] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      setHasWebSpeech(true);
-    }
-  }, []);
+  const hasWebSpeech = useSyncExternalStore(
+    () => () => {},
+    () => !!window.speechSynthesis,
+    () => false
+  );
 
   const articleText = `The accounting profession is undergoing a dramatic transformation in 2024, driven by technological advancement, regulatory changes, and evolving business needs. Artificial intelligence and automation are revolutionizing traditional accounting practices, enabling professionals to focus on strategic advisory roles rather than routine tasks.
 
